@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MateuszChmielowskiLab3ZadDom2.Controller;
+using MateuszChmielowskiLab3ZadDom2.Model;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -14,16 +16,13 @@ namespace MateuszChmielowskiLab3ZadDom2
 {
     public partial class FormPlayers : Form
     {
-        SqlConnection sqlConnection;
-        SqlDataAdapter sqlDataAdapter;
         List<int> changesToUpdate = new List<int>();
         string cellBeforeEdit = string.Empty;
 
         public FormPlayers()
         {
             InitializeComponent();
-            sqlConnection = new SqlConnection("Data Source=(local);database=MateuszChmielowskiLab3ZadDom;Trusted_Connection=yes");
-            updateDataGridViewPlayers();
+            UpdateDataGridViewPlayers();
         }
         /// <summary>
         /// Metoda wywoływana zdarzeniem wciśnięcia przycisku dodania nowego zawodnika.
@@ -37,65 +36,31 @@ namespace MateuszChmielowskiLab3ZadDom2
         /// <param name="e"></param>
         private void buttonAddUnrealPlayer_Click(object sender, EventArgs e)
         {
-            List<string> names, surnames;
-            names = new List<string>();
-            surnames = new List<string>();
-            string line;
             Random randomNumber = new Random();
-
-            StreamReader firstNameFileReader;
-            firstNameFileReader = new StreamReader("firstNames-m.txt");
-
-            StreamReader lastNameFileReader = new StreamReader("lastNames.txt");
-
-            while ((line = firstNameFileReader.ReadLine()) != null)
-            {
-                names.Add(line);
-            }
-            while ((line = lastNameFileReader.ReadLine()) != null)
-            {
-                surnames.Add(line);
-            }
-            lastNameFileReader.Close();
-            firstNameFileReader.Close();
-            SqlCommand sqlCommand = new SqlCommand("Insert into Player values ('" +
-                names.ElementAt(randomNumber.Next(0, names.Count)) + "', '" +
-                surnames.ElementAt(randomNumber.Next(0, surnames.Count)) + "', 'm', '" +
-                RandomDay().ToString("yyyy-MM-dd") + "', "+ randomNumber.Next(175,230).ToString() + 
-                ", 1, 0," + randomNumber.Next(100).ToString() + ")");
-            sqlCommand.Connection = sqlConnection;
-            sqlConnection.Open();
-            TryToExecuteQuery(sqlCommand);
-            sqlConnection.Close();
-            updateDataGridViewPlayers();
+            string queryString = "Insert into Player values ('" +
+                 FormTablesController.GenerateFirstName() + "', '" +
+                 FormTablesController.GenerateLastName() + "', 'm', '" +
+                FormTablesController.RandomDay().ToString("yyyy-MM-dd") + "', " + randomNumber.Next(175, 230).ToString() +
+                ", 1, 0," + randomNumber.Next(100).ToString() + ")";
+            DatabaseBasketballModel.makeQuery(queryString);
+            UpdateDataGridViewPlayers();
         }
+
         /// <summary>
         /// Metoda aktualizuje dane w tabeli dataGdridViewPlayers poprzez
         /// wyciągnięcie wszystkich rekordów z bazy danych i następnie przypisaniu
         /// ich jako źródło danych do tabeli.
         /// </summary>
-        private void updateDataGridViewPlayers()
+        private void UpdateDataGridViewPlayers()
         {
             dataGridViewPlayers.DataSource = null;
-            sqlDataAdapter = new SqlDataAdapter("Select * from Player", sqlConnection);
+            DatabaseBasketballModel.sqlDataAdapter = new SqlDataAdapter("Select * from Player", DatabaseBasketballModel.sqlConnection);
             DataTable dataTable = new DataTable();
-            sqlDataAdapter.Fill(dataTable);
+            DatabaseBasketballModel.sqlDataAdapter.Fill(dataTable);
             dataGridViewPlayers.DataSource = dataTable;
             dataGridViewPlayers.Columns[0].ReadOnly = true; // Kolumna ID ustawiana jest jako nieedytowalna
         }
-        /// <summary>
-        /// Metoda generuje i zwraca datę z przedziału lat [dziś - 35 lat; dziś - 18 lat]. 
-        /// </summary>
-        /// <returns>Wylosowana data z przedziału [dziś - 35 lat; dziś - 18 lat]</returns>
-        DateTime RandomDay()
-        {
-            DateTime start = DateTime.Today.AddYears(-35);
-            DateTime end = DateTime.Today.AddYears(-18);
-            Random gen = new Random();
-
-            int range = (end - start).Days;
-            return start.AddDays(gen.Next(range));
-        }
+        
         /// <summary>
         /// Metoda wywoływana zdarzeniem wciśnięcia przycisku usunięcia wybranego zawodnika,
         /// próbuje usunąć wiersz tabeli obecnie zaznaczony w dataGridViewPlayers. W przypadku,
@@ -106,13 +71,10 @@ namespace MateuszChmielowskiLab3ZadDom2
         /// <param name="e"></param>
         private void buttonDeleteSelectedRow_Click(object sender, EventArgs e)
         {
-            SqlCommand sqlCommand = new SqlCommand("Delete from Player where ID = '" + 
-                dataGridViewPlayers.Rows[dataGridViewPlayers.CurrentRow.Index].Cells[0].Value.ToString() +"'");
-            sqlCommand.Connection = sqlConnection;
-            sqlConnection.Open();
-            TryToExecuteQuery(sqlCommand);
-            sqlConnection.Close();
-            updateDataGridViewPlayers();
+            string queryString = "Delete from Player where ID = '" +
+                dataGridViewPlayers.Rows[dataGridViewPlayers.CurrentRow.Index].Cells[0].Value.ToString() + "'";
+            DatabaseBasketballModel.makeQuery(queryString);
+            UpdateDataGridViewPlayers();
         }
 
         /// <summary>
@@ -160,12 +122,9 @@ namespace MateuszChmielowskiLab3ZadDom2
         /// <param name="e"></param>
         private void buttonAcceptChanges_Click(object sender, EventArgs e)
         {
-            SqlCommand sqlCommand = new SqlCommand();
-            sqlCommand.Connection = sqlConnection;
-            sqlConnection.Open();
             foreach (var row in changesToUpdate)
             {
-                sqlCommand.CommandText = "Update PLayer SET "+
+                string queryString = "Update PLayer SET "+
                     "Name = '"+ dataGridViewPlayers.Rows[row].Cells[1].Value.ToString() +
                     "',Surname='"+ dataGridViewPlayers.Rows[row].Cells[2].Value.ToString() +
                     "',Sex='"+ dataGridViewPlayers.Rows[row].Cells[3].Value.ToString() +
@@ -175,46 +134,13 @@ namespace MateuszChmielowskiLab3ZadDom2
                     "',Injury='" + dataGridViewPlayers.Rows[row].Cells[7].Value.ToString() +
                     "',Number='"+ dataGridViewPlayers.Rows[row].Cells[8].Value.ToString()+
                     "' WHERE ID =" +  dataGridViewPlayers.Rows[row].Cells[0].Value.ToString();
-                TryToExecuteQuery(sqlCommand);
+                DatabaseBasketballModel.makeQuery(queryString);
             }
-            sqlConnection.Close();
-            updateDataGridViewPlayers();
+            UpdateDataGridViewPlayers();
             changesToUpdate.Clear();
             
             buttonAcceptChanges.Enabled = false;
         }
-        /// <summary>
-        /// Metoda próbuje wykonać kwerendę bazodanową, w przypadku błędów,
-        /// wyświetla okno z odpowiednim komunikatem.
-        /// </summary>
-        /// <param name="command">Parametr SqlCommand zawierający tekst kwerendy oraz
-        /// połączenie do bazy danych.
-        /// </param>
-        private void TryToExecuteQuery(SqlCommand command)
-        {
-            try
-            {
-                command.ExecuteNonQuery();
-            }
-            catch (SqlException ex)
-            {
-                if (ex.Errors.Count > 0) // sprawdzenie czy są błędy bazy danych
-                {
-                    switch (ex.Errors[0].Number)
-                    {
-                        case 547: // błąd naruszenia klucza obcego
-                            MessageBox.Show("Naruszenie klucza obcego. Zapytanie nie zostało wykonane.");
-                            break;
-                        case 2601: // błąd naruszenia klucza głównego
-                            MessageBox.Show("Naruszenie klucza głównego. Zapytanie nie zostało wykonane.");
-                            break;
-                        default:
-                            MessageBox.Show(ex.Message);
-                            break;
-                    }
-                }
-
-            }
-        }
+        
     }
 }
