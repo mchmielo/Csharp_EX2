@@ -69,5 +69,10 @@ namespace MateuszChmielowskiLab3ZadDom2.Model
 
             }
         }
+
+        public static void UpdateSqlAdapter(string queryString)
+        {
+            sqlDataAdapter = new SqlDataAdapter(queryString, sqlConnection);
+        }
     }
 }

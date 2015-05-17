@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MateuszChmielowskiLab3ZadDom2.View;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,7 +17,7 @@ namespace MateuszChmielowskiLab3ZadDom2
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FormPlayers());
+            Application.Run(new FormMain());
         }
     }
 }

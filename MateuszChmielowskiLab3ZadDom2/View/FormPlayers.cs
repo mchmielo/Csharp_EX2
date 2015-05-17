@@ -22,7 +22,7 @@ namespace MateuszChmielowskiLab3ZadDom2
         public FormPlayers()
         {
             InitializeComponent();
-            UpdateDataGridViewPlayers();
+            UpdateDataGridViewPlayers("Select * from Player");
         }
         /// <summary>
         /// Metoda wywoływana zdarzeniem wciśnięcia przycisku dodania nowego zawodnika.
@@ -43,7 +43,7 @@ namespace MateuszChmielowskiLab3ZadDom2
                 FormTablesController.RandomDay().ToString("yyyy-MM-dd") + "', " + randomNumber.Next(175, 230).ToString() +
                 ", 1, 0," + randomNumber.Next(100).ToString() + ")";
             DatabaseBasketballModel.makeQuery(queryString);
-            UpdateDataGridViewPlayers();
+            UpdateDataGridViewPlayers("Select * from Player"); 
         }
 
         /// <summary>
@@ -51,10 +51,10 @@ namespace MateuszChmielowskiLab3ZadDom2
         /// wyciągnięcie wszystkich rekordów z bazy danych i następnie przypisaniu
         /// ich jako źródło danych do tabeli.
         /// </summary>
-        private void UpdateDataGridViewPlayers()
+        private void UpdateDataGridViewPlayers(string queryString)
         {
             dataGridViewPlayers.DataSource = null;
-            DatabaseBasketballModel.sqlDataAdapter = new SqlDataAdapter("Select * from Player", DatabaseBasketballModel.sqlConnection);
+            DatabaseBasketballModel.UpdateSqlAdapter(queryString);
             DataTable dataTable = new DataTable();
             DatabaseBasketballModel.sqlDataAdapter.Fill(dataTable);
             dataGridViewPlayers.DataSource = dataTable;
@@ -74,7 +74,7 @@ namespace MateuszChmielowskiLab3ZadDom2
             string queryString = "Delete from Player where ID = '" +
                 dataGridViewPlayers.Rows[dataGridViewPlayers.CurrentRow.Index].Cells[0].Value.ToString() + "'";
             DatabaseBasketballModel.makeQuery(queryString);
-            UpdateDataGridViewPlayers();
+            UpdateDataGridViewPlayers("Select * from Player");
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace MateuszChmielowskiLab3ZadDom2
         {
             foreach (var row in changesToUpdate)
             {
-                string queryString = "Update PLayer SET "+
+                string queryString = "Update Player SET "+
                     "Name = '"+ dataGridViewPlayers.Rows[row].Cells[1].Value.ToString() +
                     "',Surname='"+ dataGridViewPlayers.Rows[row].Cells[2].Value.ToString() +
                     "',Sex='"+ dataGridViewPlayers.Rows[row].Cells[3].Value.ToString() +
@@ -136,10 +136,39 @@ namespace MateuszChmielowskiLab3ZadDom2
                     "' WHERE ID =" +  dataGridViewPlayers.Rows[row].Cells[0].Value.ToString();
                 DatabaseBasketballModel.makeQuery(queryString);
             }
-            UpdateDataGridViewPlayers();
+            UpdateDataGridViewPlayers("Select * from Player");
             changesToUpdate.Clear();
             
             buttonAcceptChanges.Enabled = false;
+        }
+        /// <summary>
+        /// Metoda wywoływana zdarzeniem zmiany wartości w textBoxFilter, tworzy zapytanie
+        /// bazodanowe filtrujące dane w tabeli.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void textBoxFilter_TextChanged(object sender, EventArgs e)
+        {
+            double tmp;
+            string queryString;
+            if (double.TryParse(textBoxFilter.Text, out tmp))
+            {
+                queryString = "Select * from Player where Id='" + textBoxFilter.Text +
+                "' or BirthDate Like '%" + textBoxFilter.Text +
+                "%' or Height ='" + textBoxFilter.Text +
+                "' or NationalityID='" + textBoxFilter.Text +
+                "' or Injury='" + textBoxFilter.Text +
+                "' or Number='" + textBoxFilter.Text +
+                "' or NationalityID='" + textBoxFilter.Text + "'";
+            }
+            else
+            {
+                queryString = "Select * from Player where Name Like '%" + textBoxFilter.Text +
+                    "%' or Surname Like '%" + textBoxFilter.Text +
+                    "%' or Sex='" + textBoxFilter.Text +
+                    "' or BirthDate Like '%" + textBoxFilter.Text + "%'";
+            }
+            UpdateDataGridViewPlayers(queryString);
         }
         
     }
